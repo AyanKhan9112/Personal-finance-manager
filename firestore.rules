@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'prathambighnesh91@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      
+      allow create: if isSignedIn() && request.auth.uid == userId && (
+        incoming().role == 'user' || (incoming().role == 'admin' && isAdmin())
+      );
+
+      allow update: if (
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'currency', 'updatedAt', 'lastLogin'])) ||
+        (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'status', 'name', 'currency', 'updatedAt', 'lastLogin']))
+      );
+
+      allow delete: if isAdmin() && !isOwner(userId);
+    }
+
+    // --- Admins Whitelist Collection ---
+    match /admins/{adminId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // --- Expenses Collection ---
+    match /expenses/{expenseId} {
+      allow get, delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() &&
+        incoming().userId == request.auth.uid &&
+        incoming().amount is number && incoming().amount > 0 &&
+        incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150 &&
+        incoming().category is string && incoming().category.size() <= 80 &&
+        incoming().paymentMethod is string && incoming().paymentMethod.size() <= 50;
+
+      allow update: if isSignedIn() &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().amount is number && incoming().amount > 0 &&
+        incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150;
+    }
+
+    // --- Budgets Collection ---
+    match /budgets/{budgetId} {
+      allow get, delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        incoming().userId == request.auth.uid &&
+        incoming().amount is number && incoming().amount > 0 &&
+        incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 120 &&
+        incoming().category is string && incoming().category.size() <= 80;
+
+      allow update: if isSignedIn() &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().amount is number && incoming().amount > 0 &&
+        incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 120;
+    }
+
+    // --- Financial Goals Collection ---
+    match /financialGoals/{goalId} {
+      allow get, delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        incoming().userId == request.auth.uid &&
+        incoming().targetAmount is number && incoming().targetAmount > 0 &&
+        incoming().currentAmount is number && incoming().currentAmount >= 0 &&
+        incoming().title is string && incoming().title.size() > 0 && incoming().title.size() <= 150;
+
+      allow update: if isSignedIn() &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().targetAmount is number && incoming().targetAmount > 0 &&
+        incoming().currentAmount is number && incoming().currentAmount >= 0;
+    }
+
+    // --- Goal Contributions Collection ---
+    match /goalContributions/{contributionId} {
+      allow get, delete: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        incoming().userId == request.auth.uid &&
+        incoming().amount is number && incoming().amount > 0 &&
+        incoming().goalId is string;
+
+      allow update: if isSignedIn() &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == existing().userId &&
+        incoming().amount is number && incoming().amount > 0;
+    }
+
+    // --- System Settings Collection ---
+    match /systemSettings/{settingId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // --- Audit Logs Collection (Immutable write-only by actor or admin) ---
+    match /auditLogs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isSignedIn() && (incoming().actorId == request.auth.uid || isAdmin());
+      allow update, delete: if false;
+    }
+  }
+}

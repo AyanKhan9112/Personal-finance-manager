@@ -1,0 +1,169 @@
+{
+  "entities": {
+    "users": {
+      "title": "User",
+      "description": "User profile and account settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "status": { "type": "string", "enum": ["active", "disabled"] },
+        "currency": { "type": "string", "maxLength": 10 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "role", "status"]
+    },
+    "admins": {
+      "title": "Admin",
+      "description": "Administrator whitelist record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["admin"] },
+        "addedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "expenses": {
+      "title": "Expense",
+      "description": "Personal expense record in Indian Rupees",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "amount": { "type": "number" },
+        "category": { "type": "string", "maxLength": 80 },
+        "date": { "type": "string", "maxLength": 30 },
+        "paymentMethod": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "amount", "category", "date", "paymentMethod"]
+    },
+    "budgets": {
+      "title": "Budget",
+      "description": "User monthly or category budget",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 120 },
+        "category": { "type": "string", "maxLength": 80 },
+        "amount": { "type": "number" },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "endDate": { "type": "string", "maxLength": 30 },
+        "description": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "name", "category", "amount", "startDate", "endDate"]
+    },
+    "financialGoals": {
+      "title": "FinancialGoal",
+      "description": "Target financial savings goal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 500 },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "deadline": { "type": "string", "maxLength": 30 },
+        "category": { "type": "string", "maxLength": 80 },
+        "status": { "type": "string", "enum": ["in_progress", "completed", "cancelled"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "targetAmount", "currentAmount", "deadline", "status"]
+    },
+    "goalContributions": {
+      "title": "GoalContribution",
+      "description": "Contribution history toward a financial goal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "goalId": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "maxLength": 30 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "goalId", "amount", "date"]
+    },
+    "systemSettings": {
+      "title": "SystemSettings",
+      "description": "Global application configurations and defaults",
+      "type": "object",
+      "properties": {
+        "settingsId": { "type": "string", "maxLength": 50 },
+        "appName": { "type": "string", "maxLength": 100 },
+        "defaultCurrency": { "type": "string", "maxLength": 10 },
+        "budgetWarningThreshold": { "type": "number" },
+        "allowUserRegistration": { "type": "boolean" },
+        "maintenanceMode": { "type": "boolean" },
+        "supportedCategories": { "type": "array" },
+        "updatedBy": { "type": "string", "maxLength": 150 },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["appName", "defaultCurrency", "budgetWarningThreshold"]
+    },
+    "auditLogs": {
+      "title": "AuditLog",
+      "description": "Administrative security and action audit records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "actorId": { "type": "string", "maxLength": 128 },
+        "actorEmail": { "type": "string", "maxLength": 150 },
+        "action": { "type": "string", "maxLength": 100 },
+        "targetType": { "type": "string", "maxLength": 100 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["actorId", "actorEmail", "action", "targetType", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "users",
+      "description": "User profile accounts and permissions"
+    },
+    "/admins/{adminId}": {
+      "schema": "admins",
+      "description": "Administrator whitelist"
+    },
+    "/expenses/{expenseId}": {
+      "schema": "expenses",
+      "description": "User expense records"
+    },
+    "/budgets/{budgetId}": {
+      "schema": "budgets",
+      "description": "User monthly and category budgets"
+    },
+    "/financialGoals/{goalId}": {
+      "schema": "financialGoals",
+      "description": "User financial savings goals"
+    },
+    "/goalContributions/{contributionId}": {
+      "schema": "goalContributions",
+      "description": "Contributions associated with financial goals"
+    },
+    "/systemSettings/{settingId}": {
+      "schema": "systemSettings",
+      "description": "Global application configuration settings"
+    },
+    "/auditLogs/{logId}": {
+      "schema": "auditLogs",
+      "description": "System security and administrative audit trail"
+    }
+  }
+}

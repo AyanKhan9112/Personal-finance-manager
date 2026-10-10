@@ -1,0 +1,6 @@
+{
+  "name": "Personal Finance Manager",
+  "description": "Comprehensive full-stack personal finance platform for tracking expenses in INR (₹), managing budgets, achieving savings goals, analytics, and admin governance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
